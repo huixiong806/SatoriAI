@@ -148,13 +148,22 @@ bool strategy_is_feasible(Map state,Vec2i satori_position,vector<Movement>& move
 	double time=0.0;
 	for(int i=0;i<movement.size();++i)
 	{
-		if(movement[i].type==MovementType::remove)return false;
+		
 		Vec2i prop_position=state.prop_pool[movement[i].id].position;
 		Vec2i target_position=movement[i].position;
-		time+=(double)distant[satori_position.x<<4|satori_position.y][prop_position.x<<4|prop_position.y]/5.0;
-		time+=(double)distant[prop_position.x<<4|prop_position.y][target_position.x<<4|target_position.y]/5.0;
+		if (movement[i].type == MovementType::move)
+		{
+			time+=(double)distant[satori_position.x<<4|satori_position.y][prop_position.x<<4|prop_position.y]/5.0;
+			time += (double)distant[prop_position.x << 4 | prop_position.y][target_position.x << 4 | target_position.y] / 5.0;
+			satori_position = target_position;
+		}
+		else if (movement[i].type == MovementType::remove)
+		{
+			time += (double)distant[satori_position.x << 4 | satori_position.y][prop_position.x << 4 | prop_position.y] / 5.0;
+			time++;
+			satori_position = prop_position;
+		}
 		if(time>(double)movement[i].time)return false;
-		satori_position=target_position;
 	}
 	return true;
 }
@@ -163,6 +172,7 @@ bool get_strategy(Map& state,vector<Movement>& movement,int time,int guidance_ti
 	//cout<<time<<endl;
 	if(guidance_time>max_guidance_time)return false;
 	set<pair<Vec2i,int>>visit;
+	//可行性剪枝
 	if(!strategy_is_feasible(start_state,satori_start_position,movement))return false;
 	while(true)//TODO:考虑原地打转的情况 
 	{
@@ -204,8 +214,7 @@ bool get_strategy(Map& state,vector<Movement>& movement,int time,int guidance_ti
 		{
 			//遇到礼品盒(指导成功) 
 			if(state.prop[next_position.x][next_position.y]==Prop::candy)
-			{
-				//TODO:验证方案可行性 
+			{ 
 				//return strategy_is_feasible(start_state,satori_start_position,movement);
 				return true;
 			}
@@ -320,7 +329,7 @@ void printMap(Map& map)
 Map readMap()
 {
 	fstream fs;
-	fs.open("map\\map4.txt", ios::in); 
+	fs.open("map\\map7.map", ios::in); 
 	Map map;
 	int satori_dir;
 	fs >>satori_start_position.x>>satori_start_position.y>>satori_dir;
