@@ -2,6 +2,7 @@
 #include<cstdio>
 #include<cstring>
 #include<algorithm>
+#include<fstream>
 #include<vector>
 #include<set>
 using namespace std;
@@ -162,6 +163,7 @@ bool get_strategy(Map& state,vector<Movement>& movement,int time,int guidance_ti
 	//cout<<time<<endl;
 	if(guidance_time>max_guidance_time)return false;
 	set<pair<Vec2i,int>>visit;
+	if(!strategy_is_feasible(start_state,satori_start_position,movement))return false;
 	while(true)//TODO:考虑原地打转的情况 
 	{
 		Vec2i& now_position=state.koishi.position;
@@ -204,8 +206,8 @@ bool get_strategy(Map& state,vector<Movement>& movement,int time,int guidance_ti
 			if(state.prop[next_position.x][next_position.y]==Prop::candy)
 			{
 				//TODO:验证方案可行性 
-				return true;
 				//return strategy_is_feasible(start_state,satori_start_position,movement);
+				return true;
 			}
 			//遇到蛋糕
 			if(state.prop[next_position.x][next_position.y]==Prop::cake)
@@ -276,6 +278,8 @@ bool get_strategy(Map& state,vector<Movement>& movement,int time,int guidance_ti
 			//如果有道具 
 			if(state.prop[next_position.x][next_position.y]!=Prop::empty)
 			{
+				//如果是礼品盒则指导失败 
+				if(state.prop[next_position.x][next_position.y]==Prop::candy)return false;
 				//拿走道具(指导次数+1，深入搜索)
 				Map next_state=state;
 				next_state.prop[next_position.x][next_position.y]=Prop::empty;
@@ -304,23 +308,32 @@ bool get_strategy(Map& state,vector<Movement>& movement,int time,int guidance_ti
 接下来16*16个整数
 表示道具 
 */ 
+void printMap(Map& map)
+{
+	for(int i=0;i<16;++i)
+	{
+		for(int j=0;j<16;++j)
+			printf("%4.0f",(float)map.prop[i][j]);
+		cout<<endl;
+	}
+}
 Map readMap()
 {
-	freopen("map1-3.txt","r",stdin);
-	//cout<<"*"<<endl; 
+	fstream fs;
+	fs.open("map\\map4.txt", ios::in); 
 	Map map;
 	int satori_dir;
-	cin>>satori_start_position.x>>satori_start_position.y>>satori_dir;
-	cin>>map.koishi.position.x>>map.koishi.position.y>>map.koishi.direction;
+	fs >>satori_start_position.x>>satori_start_position.y>>satori_dir;
+	fs >>map.koishi.position.x>>map.koishi.position.y>>map.koishi.direction;
 	map.koishi.hp=3;
 	for(int i=0;i<16;++i)
 		for(int j=0;j<16;++j)
-			cin>>map.height[i][j];
+			fs >>map.height[i][j];
 	for(int i=0;i<16;++i)
 		for(int j=0;j<16;++j)
 		{
 			int temp;
-			cin>>temp;
+			fs >>temp;
 			map.prop[i][j]=(Prop)temp;
 			if(temp>=2)
 			{
@@ -334,6 +347,7 @@ Map readMap()
 int main()
 {
 	start_state=readMap();
+	//printMap(start_state);
 	pretreatment(start_state);
 	vector<Movement> movement;
 	int guidance_time;
@@ -341,6 +355,7 @@ int main()
 	{
 		Map state=start_state;
 		if(get_strategy(state,movement,1,0,guidance_time))break;
+		cout << "已搜索完成" << guidance_time << "次指导，没有发现可行解" << endl;
 	}
 	cout<<"指导次数:"<<guidance_time<<endl;
 	for(int i=0;i<movement.size();++i)
