@@ -116,6 +116,7 @@ bool can_moveto(Map& state,Vec2i from,Vec2i to,int direction)
 } 
 void pretreatment(Map state)
 {
+	//初始化distant为正无穷(这个值*2不会超过int)
 	memset(distant,0x3f,sizeof(distant));
 	for(int i=0;i<16;++i)
 	{
@@ -137,12 +138,14 @@ void pretreatment(Map state)
 			}
 		}
 	}
+	//floyd最短路
 	for(int k=0;k<256;++k)
 		for(int i=0;i<256;++i)
 			for(int j=0;j<256;++j)
 				if(distant[i][j]>distant[i][k]+distant[k][j])
 					distant[i][j]=distant[i][k]+distant[k][j];
 }
+//估算策略是否可行
 bool strategy_is_feasible(Map state,Vec2i satori_position,vector<Movement>& movement)
 {
 	double time=0.0;
@@ -167,6 +170,7 @@ bool strategy_is_feasible(Map state,Vec2i satori_position,vector<Movement>& move
 	}
 	return true;
 }
+//搜索策略
 bool get_strategy(Map& state,vector<Movement>& movement,int time,int guidance_time,int max_guidance_time)
 {
 	//cout<<time<<endl;
@@ -174,7 +178,7 @@ bool get_strategy(Map& state,vector<Movement>& movement,int time,int guidance_ti
 	set<pair<Vec2i,int>>visit;
 	//可行性剪枝
 	if(!strategy_is_feasible(start_state,satori_start_position,movement))return false;
-	while(true)//TODO:考虑原地打转的情况 
+	while(true)
 	{
 		Vec2i& now_position=state.koishi.position;
 		Vec2i next_position=now_position+delta[state.koishi.direction];
